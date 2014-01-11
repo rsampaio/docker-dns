@@ -32,3 +32,9 @@ Aliases:
 
 mycontainer.docker has address 172.17.0.3
 ```
+
+TODO
+====
+
+* SRV entries for each container port
+* Dynamicaly remove entries based on docker events
