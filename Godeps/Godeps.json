@@ -1,0 +1,19 @@
+{
+	"ImportPath": "github.com/rsampaio/docker-dns",
+	"GoVersion": "go1.5",
+	"Deps": [
+		{
+			"ImportPath": "github.com/docker/go-units",
+			"Comment": "v0.1.0-23-g5d2041e",
+			"Rev": "5d2041e26a699eaca682e2ea41c8f891e1060444"
+		},
+		{
+			"ImportPath": "github.com/miekg/dns",
+			"Rev": "83f7d658ac219335d42f7ec4397a76e35ca7f835"
+		},
+		{
+			"ImportPath": "github.com/samalba/dockerclient",
+			"Rev": "4278ba330b9475a8fa85520226479697f6c84482"
+		}
+	]
+}

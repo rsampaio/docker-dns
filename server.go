@@ -1,12 +1,15 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
-	"github.com/miekg/dns"
-	"github.com/samalba/dockerclient"
+	"fmt"
 	"log"
 	"net"
 	"strings"
+
+	"github.com/miekg/dns"
+	"github.com/samalba/dockerclient"
 )
 
 var docker dockerclient.DockerClient
@@ -19,24 +22,25 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 	q := r.Question[0]
 
 	if q.Qtype == dns.TypeA && strings.HasSuffix(q.Name, ".docker.") {
-		docker, _ := dockerclient.NewDockerClient("unix:///var/run/docker.sock")
-		nameDomain := strings.Split(q.Name, ".")
-		containers, err := docker.ListContainers(false)
+		docker, _ := dockerclient.NewDockerClient("unix:///var/run/docker.sock", &tls.Config{})
+		name := strings.SplitN(q.Name, ".", 2)[0]
+		containers, err := docker.ListContainers(false, false, fmt.Sprintf("{\"name\":[\"%s\"]}", name))
 		if err != nil {
 			log.Fatal(err)
 		}
 		for _, c := range containers {
-			for _, n := range c.Names {
-				if nameDomain[0] == n[1:] {
-					info, _ := docker.InspectContainer(c.Id)
-					log.Printf("Container %s has ip %s\n", nameDomain[0], info.NetworkSettings.IpAddress)
-					records = append(records,
-						&dns.A{Hdr: dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60},
-							A: net.ParseIP(info.NetworkSettings.IpAddress)})
-				}
-			}
+			info, _ := docker.InspectContainer(c.Id)
+			log.Printf("Container %s[%6s] has ip %s\n", name, info.Id, info.NetworkSettings.IPAddress)
+			records = append(records,
+				&dns.A{
+					Hdr: dns.RR_Header{
+						Name:   q.Name,
+						Rrtype: dns.TypeA,
+						Class:  dns.ClassINET,
+						Ttl:    60},
+					A: net.ParseIP(info.NetworkSettings.IPAddress),
+				})
 		}
-
 	}
 
 	m.Answer = append(m.Answer, records...)
